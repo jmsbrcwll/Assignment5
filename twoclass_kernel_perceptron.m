@@ -42,7 +42,7 @@ for target_digit = 0:max_digit,
     tth_instance = 0;
     for loop = 1:1, % until convergence
         for t = 1:n_train,
-            y_target = gen_targets(i);
+            y_target = gen_targets(t);
             
             % Prediction
             y_predict = mysign(w_fcn(w(:,index),K_matrix,t));
