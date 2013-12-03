@@ -1,0 +1,11 @@
+%computes the value of w
+%wMatrix - t x 2 matrix which holds the index of the pattern in the first
+%column, and the value of alpha in the second column
+
+function rtn = w(wMatrix, KernelMatrix)
+for i = 1:size(wMatrix, 1)
+    if wMatrix
+    
+end
+
+end
