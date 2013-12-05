@@ -6,14 +6,14 @@ train_input = ziptrain(1:5000,2:end);
 recompute = 0; % 0 = don't recompute Kmatrix, 1 = recompute Kmatrix
 
 n_train = size(train_input,1);      
-n_epochs = 100; % m
+n_epochs = 20; % Hard maximum on the number of epochs
 
 %% Algorithm
 % Initialisation
 max_digit = 9;
 GLBcls = zeros(max_digit+1,n_train); % 1 = t
 previous_assignment = ones(max_digit+1,n_train).*-1;
-poly_degree = 3;
+poly_degree = 4;
 convergedEpoch = -1;
 
 % Train
@@ -22,27 +22,27 @@ fprintf('  Loading Kmatrix (train)\n');
 if ~exist('K_matrix_train','var') || recompute == 1,
     K_matrix_train = zeros(n_train,n_train);
     for i = 1:n_train,
-        for j = i:n_train,
-            K_matrix_train(i,j) = K_fcn(train_input(i,:),train_input(j,:),1);
-        end
+        dat = repmat(train_input(i,:),[n_train,1]);
+        K_matrix_train(i,:) = dot(dat',train_input');
     end
-    % Append transpose and half the diagonal as it was doubled in our addition
-    % Cuts number of computations required in half
-    K_matrix_train = K_matrix_train + (K_matrix_train' .* (ones(n_train)-eye(n_train)*0.5));
 end
- K_matrix_train_polyd =exp(-poly_degree.* K_matrix_train);
+K_matrix_train_polyd = K_matrix_train .^ poly_degree;
 
+fprintf('  Epoch:');
 for loop = 1:n_epochs, % until convergence
     if (previous_assignment == GLBcls),
         convergedEpoch = loop-1;
-        fprintf('  Converged\n');
+        fprintf('\n  Converged');
         break;
     else
         previous_assignment = GLBcls;
     end
-    fprintf('  Epoch %d\n',loop);
+    fprintf(' %d',loop);
     for i = 1:n_train,
         val = train_target(i,1); % Target
+        if val == 0, 
+            val = 10;
+        end
         preds = zeros(1,10);
         for j = 1:10, % Digit
             preds(j) = sum(GLBcls(j,:).*K_matrix_train_polyd(i,:));
@@ -68,7 +68,7 @@ for loop = 1:n_epochs, % until convergence
     end
 end
 
-fprintf('Training Complete\nValidating...\n');
+fprintf('\nTraining Complete\nValidating...\n');
 % Validation
 validation_input = ziptrain(5001:end,2:end);
 validation_target = ziptrain(5001:end,1);
@@ -78,17 +78,18 @@ fprintf('  Loading Kmatrix (validation)\n');
 if ~exist('K_matrix_validation','var') || recompute == 1,
     K_matrix_validation = zeros(n_validation,n_train);
     for i = 1:n_validation,
-        for j = 1:n_train,
-            K_matrix_validation(i,j) = K_fcn(validation_input(i,:),train_input(j,:),1);
-        end
+        dat = repmat(validation_input(i,:),[n_train,1]);
+        K_matrix_validation(i,:) = dot(dat',train_input');
     end
 end
-K_matrix_validation_polyd =exp(-poly_degree.* K_matrix_validation);
-
+K_matrix_validation_polyd = K_matrix_validation .^ poly_degree;
 
 correct = 0;
 for i = 1:n_validation,
     val = validation_target(i,1); % Target 0-9
+    if val == 0, 
+        val = 10;
+    end
     preds = zeros(1,10);
     for j = 1:10, % Digit
         preds(j) = sum(GLBcls(j,:).*K_matrix_validation_polyd(i,:));        
@@ -106,9 +107,6 @@ for i = 1:n_validation,
            maxc = preds(j);
            maxi = j;
         end
-    end
-    if maxi == 10,
-        maxi = 0;
     end
     if maxi == val,
         correct = correct + 1;
@@ -135,28 +133,30 @@ convergedEpoch = -1;
 if ~exist('K_matrix_train_all','var') || recompute == 1,
     K_matrix_train_all = zeros(n_train,n_train);
     for i = 1:n_train,
-        for j = i:n_train,
-            K_matrix_train_all(i,j) = Gaussian_K_fcn(train_input(i,:),train_input(j,:),1);
-        end
+        dat = repmat(train_input(i,:),[n_train,1]);
+        K_matrix_train_all(i,:) = dot(dat',train_input');
     end
-    K_matrix_train_all = K_matrix_train_all + (K_matrix_train_all' .* (ones(n_train)-eye(n_train)*0.5));
 end
-
-K_matrix_train_all_polyd =exp(-poly_degree.* K_matrix_train_all);
+K_matrix_train_all_polyd = K_matrix_train_all .^ poly_degree;
 
 % Train
 fprintf('Retraining...\n');
+fprintf('  Epoch:');
 for loop = 1:n_epochs, % until convergence
     if (previous_assignment == GLBcls),
         convergedEpoch = loop-1;
-        fprintf('  Converged\n');
+        fprintf('\n  Converged\n');
         break;
     else
         previous_assignment = GLBcls;
     end
-    fprintf('  Epoch %d\n',loop);
+    fprintf(' %d',loop);
     for i = 1:n_train,
         val = train_target(i,1); % Target
+        if val == 0, 
+            val = 10;
+        end
+        
         preds = zeros(1,10);
         for j = 1:10, % Digit
             preds(j) = sum(GLBcls(j,:).*K_matrix_train_all_polyd(i,:));
