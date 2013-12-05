@@ -18,20 +18,24 @@ fprintf('  Loading Kmatrix (test)\n');
 if ~exist('K_matrix_test','var') || recompute == 1,
     K_matrix_test = zeros(n_test,n_train);
     for i = 1:n_test,
-        for j = 1:n_train,
-            K_matrix_test(i,j) = Gaussian_K_fcn(test_input(i,:),train_input(j,:),1);
-        end
+        dat = repmat(test_input(i,:),[n_train,1]);
+        K_matrix_test(i,:) = dot(dat',train_input');
     end
 end
+K_matrix_test_polyd = K_matrix_test .^ poly_degree;
 
-K_matrix_test_polyd =exp(-poly_degree.* K_matrix_test);
 
 correct = 0;
+test_details_confidence = zeros(10,n_test);
 for i = 1:n_test,
     val = test_target(i,1); % Target 0-9
+    if val == 0, 
+        val = 10;
+    end
     preds = zeros(1,10);
     for j = 1:10, % Digit
-        preds(j) = sum(GLBcls(j,:).*K_matrix_test_polyd(i,:));        
+        preds(j) = sum(GLBcls(j,:).*K_matrix_test_polyd(i,:)); 
+        test_details_confidence(j,i) = preds(j);
     end
 
     maxc = -inf;
@@ -47,12 +51,17 @@ for i = 1:n_test,
            maxi = j;
         end
     end
-    if maxi == 10,
-        maxi = 0;
-    end
     if maxi == val,
         correct = correct + 1;
     end
+    if maxi == 10,
+        maxi = 0;
+    end
+    if val == 10,
+        val = 0;
+    end
+    test_details(i,1) = maxi; % Predicted
+    test_details(i,2) = val; % Actual
 end
 accuracy = correct / n_test;
 
