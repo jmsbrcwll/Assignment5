@@ -1,0 +1,13 @@
+
+
+
+            
+            if (y*preds(j) <= 0),
+                GLBcls(j,i) = GLBcls(j,i) - mysign(preds(j));
+                
+            end
+            if (y*preds(j) <= 0),
+                GLBcls(j,i) = (y - preds(j)) / K_matrix_train_polyd(i,i)
+                
+            end
+
